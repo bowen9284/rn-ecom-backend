@@ -1,63 +1,32 @@
-const express = require('express');
-const app = express();
-const morgan = require('morgan');
-const mongoose = require('mongoose');
+import express from 'express';
+import morgan from 'morgan';
+import mongoose from 'mongoose';
+import router from './routers/products.js';
 
-require('dotenv/config');
+import 'dotenv/config';
+
+const app = express();
+
+const { json } = express;
+const { connect } = mongoose;
 
 const baseURL = process.env.API_BASE_URL;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbUrl = process.env.DB_URL;
-const connectionUrl = `mongodb+srv://${dbUser}:${dbPassword}@${dbUrl}`
+const connectionUrl = `mongodb+srv://${dbUser}:${dbPassword}@${dbUrl}`;
 
-app.use(express.json());
+// middleware
+app.use(json());
 app.use(morgan('tiny'));
 
-const productSchema = mongoose.Schema({
-  name: String,
-  image: String,
-  countInStock: {
-    type: Number,
-    required: true,
-  },
-});
+// routers
+app.use(`${baseURL}/products`, router);
 
-const Product = mongoose.model('Product', productSchema);
-
-app.get(`${baseURL}/products`, async (req, res) => {
-  const productList = await Product.find();
-
-  if (!productList) {
-    res.status(500).json({ success: false });
-  }
-
-  res.send(productList);
-});
-
-app.post(`${baseURL}/products`, async (req, res) => {
-  const product = new Product({
-    name: req.body.name,
-    image: req.body.image,
-    countInStock: req.body.countInStock,
-  });
-
-  const savedProduct = await product.save();
-
-  if (!savedProduct) {
-    res.status(500).json({
-      success: false,
-    });
-  }
-
-  res.status(201).json(savedProduct);
-});
-
-mongoose
-  .connect(connectionUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+connect(connectionUrl, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
   .then(() => {
     console.log('Database Connected!');
   })
