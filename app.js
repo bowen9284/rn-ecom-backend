@@ -1,7 +1,10 @@
 import express from 'express';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
-import router from './routers/products.js';
+import productsRouter from './routes/products.js';
+import categoriesRouter from './routes/categories.js';
+
+import cors from 'cors';
 
 import 'dotenv/config';
 
@@ -19,9 +22,12 @@ const connectionUrl = `mongodb+srv://${dbUser}:${dbPassword}@${dbUrl}`;
 // middleware
 app.use(json());
 app.use(morgan('tiny'));
+app.use(cors());
+app.options('*', cors());
 
 // routers
-app.use(`${baseURL}/products`, router);
+app.use(`${baseURL}/products`, productsRouter);
+app.use(`${baseURL}/categories`, categoriesRouter);
 
 connect(connectionUrl, {
   useNewUrlParser: true,

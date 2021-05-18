@@ -1,19 +1,19 @@
 import Router from 'express';
 import Product from '../models/product.js';
 
-const router = Router();
+const productsRouter = Router();
 
-router.get(`/`, async (req, res) => {
+productsRouter.get(`/`, async (req, res) => {
   const productList = await Product.find();
 
   if (!productList) {
-    res.status(500).json({ success: false });
+    return res.status(500).json({ success: false });
   }
 
-  res.send(productList);
+  return res.send(productList);
 });
 
-router.post(`/`, async (req, res) => {
+productsRouter.post(`/`, async (req, res) => {
   const product = new Product({
     name: req.body.name,
     image: req.body.image,
@@ -23,12 +23,12 @@ router.post(`/`, async (req, res) => {
   const savedProduct = await product.save();
 
   if (!savedProduct) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
     });
   }
 
-  res.status(201).json(savedProduct);
+  return res.status(201).json(savedProduct);
 });
 
-export default router;
+export default productsRouter;
