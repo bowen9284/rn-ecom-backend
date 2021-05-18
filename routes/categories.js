@@ -73,12 +73,6 @@ categoriesRouter.put('/:id', async (req, res) => {
   res.status(200).json(category);
 });
 
-const categoryNotFoundResponse = (response) => {
-  response
-    .status(404)
-    .json({ success: false, message: 'The category was not found.' });
-};
-
 categoriesRouter.delete(`/:id`, async (req, res) => {
   let removedCategory;
 
