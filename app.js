@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import productsRouter from './routes/products.js';
 import categoriesRouter from './routes/categories.js';
 
-import cors from 'cors';
 
 import 'dotenv/config';
 
@@ -22,8 +21,6 @@ const connectionUrl = `mongodb+srv://${dbUser}:${dbPassword}@${dbUrl}`;
 // middleware
 app.use(json());
 app.use(morgan('tiny'));
-app.use(cors());
-app.options('*', cors());
 
 // routers
 app.use(`${baseURL}/products`, productsRouter);
