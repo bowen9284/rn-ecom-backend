@@ -3,9 +3,11 @@ import morgan from 'morgan';
 import mongoose from 'mongoose';
 import productsRouter from './routes/products.js';
 import categoriesRouter from './routes/categories.js';
-
+import usersRouter from './routes/users.js';
 
 import 'dotenv/config';
+import { authJwt } from './util/jwt.js';
+import { errorHandler } from './util/error.js';
 
 const app = express();
 
@@ -21,10 +23,13 @@ const connectionUrl = `mongodb+srv://${dbUser}:${dbPassword}@${dbUrl}`;
 // middleware
 app.use(json());
 app.use(morgan('tiny'));
+app.use(authJwt());
+app.use(errorHandler);
 
 // routers
 app.use(`${baseURL}/products`, productsRouter);
 app.use(`${baseURL}/categories`, categoriesRouter);
+app.use(`${baseURL}/users`, usersRouter);
 
 connect(connectionUrl, {
   useNewUrlParser: true,
