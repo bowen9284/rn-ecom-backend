@@ -1,7 +1,9 @@
 import express from 'express';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
-import router from './routers/products.js';
+import productsRouter from './routes/products.js';
+import categoriesRouter from './routes/categories.js';
+
 
 import 'dotenv/config';
 
@@ -21,7 +23,8 @@ app.use(json());
 app.use(morgan('tiny'));
 
 // routers
-app.use(`${baseURL}/products`, router);
+app.use(`${baseURL}/products`, productsRouter);
+app.use(`${baseURL}/categories`, categoriesRouter);
 
 connect(connectionUrl, {
   useNewUrlParser: true,
