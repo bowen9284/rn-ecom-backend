@@ -8,6 +8,7 @@ import usersRouter from './routes/users.js';
 import 'dotenv/config';
 import { authJwt } from './util/jwt.js';
 import { errorHandler } from './util/error.js';
+import ordersRouter from './routes/orders.js';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(errorHandler);
 app.use(`${baseURL}/products`, productsRouter);
 app.use(`${baseURL}/categories`, categoriesRouter);
 app.use(`${baseURL}/users`, usersRouter);
+app.use(`${baseURL}/orders`, ordersRouter);
 
 connect(connectionUrl, {
   useNewUrlParser: true,
