@@ -2,9 +2,37 @@ import Router from 'express';
 import Category from '../models/category.js';
 import Product from '../models/product.js';
 import mongoose from 'mongoose';
+import multer from 'multer';
 
 const productsRouter = Router();
 const { isValidObjectId } = mongoose;
+const { diskStorage } = multer;
+
+const FILE_TYPE_MAP = {
+  'image/png': 'png',
+  'image/jpeg': 'jpeg',
+  'image/jpg': 'jpg',
+};
+
+var storage = diskStorage({
+  destination: function (req, file, cb) {
+    const isValid = FILE_TYPE_MAP[file.mimetype];
+    let uploadError = new Error('Invalid image type');
+
+    if (isValid) {
+      uploadError = null;
+    }
+
+    cb(uploadError, 'public/upload');
+  },
+  filename: function (req, file, cb) {
+    const fileName = file.originalname.replace(' ', '-');
+    const extension = FILE_TYPE_MAP[file.mimetype];
+    cb(null, `${fileName}-${Date.now()}.${extension}`);
+  },
+});
+
+const uploadOptions = multer({ storage: storage });
 
 productsRouter.get(`/`, async (req, res) => {
   let filter = {};
@@ -38,18 +66,21 @@ productsRouter.get(`/:id`, async (req, res) => {
   return res.status(200).send(product);
 });
 
-productsRouter.post(`/`, async (req, res) => {
+productsRouter.post(`/`, uploadOptions.single('image'), async (req, res) => {
   const category = await Category.findById(req.body.category);
   if (!category) {
     res.status(400).send('Invalid Category');
   }
+
+  const fileName = req.file.filename;
+  const basePath = `${req.protocol}://${req.get('host')}/public/upload/`;
 
   const product = new Product({
     name: req.body.name,
     image: req.body.image,
     description: req.body.description,
     richDescription: req.body.richDescription,
-    image: req.body.image,
+    image: `${basePath}${fileName}`,
     brand: req.body.brand,
     price: req.body.price,
     category: req.body.category,
@@ -68,7 +99,7 @@ productsRouter.post(`/`, async (req, res) => {
   res.send(savedProduct);
 });
 
-productsRouter.put('/:id', async (req, res) => {
+productsRouter.put('/:id', uploadOptions.single('image'), async (req, res) => {
   if (!isValidObjectId(req.params.id)) {
     res.status(400).send('Invalid Product ID');
   }
@@ -78,17 +109,33 @@ productsRouter.put('/:id', async (req, res) => {
     return res.status(400).send('Invalid Category');
   }
 
-  let product;
+  const product = await Product.findById(req.params.id);
+  if (!product) {
+    return res.status(400).send('Invalid Product');
+  }
+
+  const file = req.file;
+  let imagePath;
+
+  if (file) {
+    const fileName = req.file.filename;
+    const basePath = `${req.protocol}://${req.get('host')}/public/upload/`;
+    imagePath = `${basePath}${fileName}`;
+  } else {
+    imagePath = product.image;
+  }
+
+  let updatedProduct;
 
   try {
-    product = await Product.findByIdAndUpdate(
+    updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
       {
         name: req.body.name,
         image: req.body.image,
         description: req.body.description,
         richDescription: req.body.richDescription,
-        image: req.body.image,
+        image: imagePath,
         brand: req.body.brand,
         price: req.body.price,
         category: req.body.category,
@@ -103,13 +150,13 @@ productsRouter.put('/:id', async (req, res) => {
     res.status(500).json({ success: false, message: error });
   }
 
-  if (!product) {
+  if (!updatedProduct) {
     res
       .status(404)
       .json({ success: false, message: 'The product was not found.' });
   }
 
-  res.status(200).json(product);
+  res.status(200).json(updatedProduct);
 });
 
 productsRouter.delete(`/:id`, async (req, res) => {
@@ -158,5 +205,41 @@ productsRouter.get(`/get/featured/:count`, async (req, res) => {
 
   return res.send(featuredProducts);
 });
+
+productsRouter.put(
+  '/gallery/:id',
+  uploadOptions.array('images', 10),
+  async (req, res) => {
+    if (!isValidObjectId(req.params.id)) {
+      res.status(400).send('Invalid Product ID');
+    }
+
+    const files = req.files;
+    let imagePaths = [];
+    const basePath = `${req.protocol}://${req.get('host')}/public/upload/`;
+
+    if (files) {
+      files.map((file) => {
+        imagePaths.push(`${basePath}${file.filename}`);
+      });
+    }
+
+    let product;
+
+    try {
+      product = await Product.findByIdAndUpdate(
+        req.params.id,
+        {
+          images: imagePaths,
+        },
+        { new: true }
+      );
+    } catch (error) {
+      res.status(500).json({ success: false, message: error });
+    }
+
+    return res.send(product);
+  }
+);
 
 export default productsRouter;

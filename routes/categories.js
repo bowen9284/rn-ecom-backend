@@ -70,7 +70,7 @@ categoriesRouter.put('/:id', async (req, res) => {
       .json({ success: false, message: 'The category was not found.' });
   }
 
-  res.status(200).json(category);
+  res.send(category);
 });
 
 categoriesRouter.delete(`/:id`, async (req, res) => {
