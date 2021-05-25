@@ -23,7 +23,7 @@ const userSchema = Schema({
     type: String,
     default: '',
   },
-  apartmment: {
+  apartment: {
     type: String,
     default: '',
   },

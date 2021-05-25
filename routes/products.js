@@ -67,7 +67,6 @@ productsRouter.get(`/:id`, async (req, res) => {
 });
 
 productsRouter.post(`/`, uploadOptions.single('image'), async (req, res) => {
-  console.log('POSeregagaghehT');
   const category = await Category.findById(req.body.category);
   if (!category) {
     res.status(400).send('Invalid Category');
@@ -100,7 +99,7 @@ productsRouter.post(`/`, uploadOptions.single('image'), async (req, res) => {
   res.send(savedProduct);
 });
 
-productsRouter.put('/:id', async (req, res) => {
+productsRouter.put('/:id', uploadOptions.single('image'), async (req, res) => {
   if (!isValidObjectId(req.params.id)) {
     res.status(400).send('Invalid Product ID');
   }
@@ -110,17 +109,33 @@ productsRouter.put('/:id', async (req, res) => {
     return res.status(400).send('Invalid Category');
   }
 
-  let product;
+  const product = await Product.findById(req.params.id);
+  if (!product) {
+    return res.status(400).send('Invalid Product');
+  }
+
+  const file = req.file;
+  let imagePath;
+
+  if (file) {
+    const fileName = req.file.filename;
+    const basePath = `${req.protocol}://${req.get('host')}/public/upload/`;
+    imagePath = `${basePath}${fileName}`;
+  } else {
+    imagePath = product.image;
+  }
+
+  let updatedProduct;
 
   try {
-    product = await Product.findByIdAndUpdate(
+    updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
       {
         name: req.body.name,
         image: req.body.image,
         description: req.body.description,
         richDescription: req.body.richDescription,
-        image: req.body.image,
+        image: imagePath,
         brand: req.body.brand,
         price: req.body.price,
         category: req.body.category,
@@ -135,13 +150,13 @@ productsRouter.put('/:id', async (req, res) => {
     res.status(500).json({ success: false, message: error });
   }
 
-  if (!product) {
+  if (!updatedProduct) {
     res
       .status(404)
       .json({ success: false, message: 'The product was not found.' });
   }
 
-  res.status(200).json(product);
+  res.status(200).json(updatedProduct);
 });
 
 productsRouter.delete(`/:id`, async (req, res) => {
@@ -190,5 +205,41 @@ productsRouter.get(`/get/featured/:count`, async (req, res) => {
 
   return res.send(featuredProducts);
 });
+
+productsRouter.put(
+  '/gallery/:id',
+  uploadOptions.array('images', 10),
+  async (req, res) => {
+    if (!isValidObjectId(req.params.id)) {
+      res.status(400).send('Invalid Product ID');
+    }
+
+    const files = req.files;
+    let imagePaths = [];
+    const basePath = `${req.protocol}://${req.get('host')}/public/upload/`;
+
+    if (files) {
+      files.map((file) => {
+        imagePaths.push(`${basePath}${file.filename}`);
+      });
+    }
+
+    let product;
+
+    try {
+      product = await Product.findByIdAndUpdate(
+        req.params.id,
+        {
+          images: imagePaths,
+        },
+        { new: true }
+      );
+    } catch (error) {
+      res.status(500).json({ success: false, message: error });
+    }
+
+    return res.send(product);
+  }
+);
 
 export default productsRouter;
