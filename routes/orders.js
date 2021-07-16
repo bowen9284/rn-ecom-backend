@@ -44,7 +44,7 @@ ordersRouter.post(`/`, async (req, res) => {
     req.body.orderItems.map(async (orderItem) => {
       let newOrderItem = new OrderItem({
         quantity: orderItem.quantity,
-        product: orderItem.product,
+        product: orderItem,
       });
 
       newOrderItem = await newOrderItem.save();
